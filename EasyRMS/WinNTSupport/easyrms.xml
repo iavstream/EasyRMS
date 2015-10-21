@@ -70,5 +70,10 @@
 		<PREF NAME="ALLOW_CACHE" TYPE="Bool16" >false</PREF>
 		<PREF NAME="TARGET_DURATION" TYPE="UInt32" >30</PREF>
 		<PREF NAME="PLAYLIST_CAPACITY" TYPE="UInt32" >10</PREF>
+		<PREF NAME="oss_bucket_name" >easydarwin-easyrms-bucket</PREF>
+		<PREF NAME="oss_endpoint" >oss-cn-hangzhou.aliyuncs.com</PREF>
+		<PREF NAME="oss_port" TYPE="UInt32" >80</PREF>
+		<PREF NAME="oss_access_key_id" >ayO28eQpxOntWuzV</PREF>
+		<PREF NAME="oss_access_key_secret" >MJQD5mE27JCTIwBdrbofmSPjgDoAkG</PREF>
 	</MODULE>
 </CONFIGURATION>

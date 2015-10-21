@@ -17,7 +17,7 @@
 #include "SourceInfo.h"
 #include "OSArrayObjectDeleter.h"
 #include "EasyRTSPClientAPI.h"
-#include "EasyHLSAPI.h"
+#include "EasyRecordAPI.h"
 
 #include "TimeoutTask.h"
 
@@ -68,7 +68,7 @@ class EasyRecordSession : public Task
 		//RTSPClient Handle
 		Easy_RTSP_Handle	fRTSPClientHandle;
 		//HLS Handle
-		Easy_HLS_Handle fHLSHandle;
+		Easy_Record_Handle fRecordHandle;
 		
 		//TS timestamp ms，自定义时间戳
 		int tsTimeStampMSsec;
@@ -78,6 +78,11 @@ class EasyRecordSession : public Task
 		static UInt32	sTargetDuration;
 		static UInt32	sPlaylistCapacity;
 		static char*	sHTTPRootDir;
+		static char*	sOSSBucketName;
+		static char*	sOSSEndpoint;
+		static UInt32	sOSSPort;
+		static char*	sOSSAccessKeyID;
+		static char*	sOSSAccessKeySecret;
 
 		//统计
 		SInt64          fPlayTime;				//起始的时间

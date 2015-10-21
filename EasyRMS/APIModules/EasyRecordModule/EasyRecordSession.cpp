@@ -28,12 +28,23 @@ static Bool16                   sDefaultAllowCache					= false;
 static UInt32                   sDefaultTargetDuration				= 4;
 static UInt32                   sDefaultPlaylistCapacity			= 4;
 static char*					sDefaultHTTPRootDir					= "http://www.easydarwin.org/";
+static char*					sDefaultOSSBucketName				= "easydarwin-easyrms-bucket";
+static char*					sDefaultOSSEndpoint					= "oss-cn-hangzhou.aliyuncs.com";
+static UInt32					sDefaultOSSPort						= 80;
+static char*					sDefaultOSSAccessKeyID				= "ayO28eQpxOntWuzV";
+static char*					sDefaultOSSAccessKeySecret			= "MJQD5mE27JCTIwBdrbofmSPjgDoAkG";
 
-UInt32                          EasyRecordSession::sM3U8Version		= 3;
+UInt32                          EasyRecordSession::sM3U8Version			= 3;
 Bool16                          EasyRecordSession::sAllowCache			= false;
 UInt32                          EasyRecordSession::sTargetDuration		= 4;
 UInt32                          EasyRecordSession::sPlaylistCapacity	= 4;
-char*							EasyRecordSession::sHTTPRootDir		= NULL;
+char*							EasyRecordSession::sHTTPRootDir			= NULL;
+char*							EasyRecordSession::sOSSBucketName		= NULL;
+char*							EasyRecordSession::sOSSEndpoint			= NULL;
+UInt32							EasyRecordSession::sOSSPort				= 80;
+char*							EasyRecordSession::sOSSAccessKeyID		= NULL;
+char*							EasyRecordSession::sOSSAccessKeySecret	= NULL;
+
 
 void EasyRecordSession::Initialize(QTSS_ModulePrefsObject inPrefs)
 {
@@ -51,7 +62,23 @@ void EasyRecordSession::Initialize(QTSS_ModulePrefsObject inPrefs)
 
 	QTSSModuleUtils::GetAttribute(inPrefs, "PLAYLIST_CAPACITY", qtssAttrDataTypeUInt32,
 							  &EasyRecordSession::sPlaylistCapacity, &sDefaultPlaylistCapacity, sizeof(sDefaultPlaylistCapacity));
+	
+	delete [] sOSSBucketName;
+	sOSSBucketName = QTSSModuleUtils::GetStringAttribute(inPrefs, "oss_bucket_name", sDefaultOSSBucketName);
 
+	delete [] sOSSEndpoint;
+	sOSSEndpoint = QTSSModuleUtils::GetStringAttribute(inPrefs, "oss_endpoint", sDefaultOSSEndpoint);
+
+	QTSSModuleUtils::GetAttribute(inPrefs, "oss_port", qtssAttrDataTypeUInt32,
+		&EasyRecordSession::sOSSPort, &sDefaultOSSPort, sizeof(sDefaultOSSPort));
+
+	delete [] sOSSAccessKeyID;
+	sOSSAccessKeyID = QTSSModuleUtils::GetStringAttribute(inPrefs, "oss_access_key_id", sDefaultOSSAccessKeyID);
+
+	delete [] sOSSAccessKeySecret;
+	sOSSAccessKeySecret = QTSSModuleUtils::GetStringAttribute(inPrefs, "oss_access_key_secret", sDefaultOSSAccessKeySecret);
+
+	EasyRecord_OSS_Initialize(sOSSBucketName, sOSSEndpoint, sOSSPort, sOSSAccessKeyID, sOSSAccessKeySecret);
 }
 
 /* RTSPClient获取数据后回调给上层 */
@@ -70,7 +97,7 @@ int Easy_APICALL __RTSPClientCallBack( int _chid, int *_chPtr, int _mediatype, c
 EasyRecordSession::EasyRecordSession(StrPtrLen* inSessionID)
 :   fQueueElem(),
 	fRTSPClientHandle(NULL),
-	fHLSHandle(NULL),
+	fRecordHandle(NULL),
 	tsTimeStampMSsec(0),
 	fPlayTime(0),
     fTotalPlayTime(0),
@@ -153,7 +180,7 @@ SInt64 EasyRecordSession::Run()
 
 QTSS_Error EasyRecordSession::ProcessData(int _chid, int mediatype, char *pbuf, RTSP_FRAME_INFO *frameinfo)
 {
-	if(NULL == fHLSHandle) return QTSS_Unimplemented;
+	if(NULL == fRecordHandle) return QTSS_Unimplemented;
 
 	if ((mediatype == EASY_SDK_VIDEO_FRAME_FLAG) || (mediatype == EASY_SDK_AUDIO_FRAME_FLAG))
 	{
@@ -181,7 +208,7 @@ QTSS_Error EasyRecordSession::ProcessData(int _chid, int mediatype, char *pbuf, 
 			return QTSS_OutOfState;
 		}
 
-		EasyHLS_VideoMux(fHLSHandle, uiFrameType, (unsigned char*)pbuf, frameinfo->length, llPTS*90, llPTS*90, llPTS*90);
+		EasyRecord_VideoMux(fRecordHandle, uiFrameType, (unsigned char*)pbuf, frameinfo->length, llPTS*90, llPTS*90, llPTS*90);
 	}
 	else if (mediatype == EASY_SDK_AUDIO_FRAME_FLAG)
 	{
@@ -192,7 +219,7 @@ QTSS_Error EasyRecordSession::ProcessData(int _chid, int mediatype, char *pbuf, 
 
 		if (frameinfo->codec == EASY_SDK_AUDIO_CODEC_AAC)
 		{
-			EasyHLS_AudioMux(fHLSHandle, (unsigned char*)pbuf, frameinfo->length, llPTS*90, llPTS*90);
+			EasyRecord_AudioMux(fRecordHandle, (unsigned char*)pbuf, frameinfo->length, llPTS*90, llPTS*90);
 		}
 	}
 	else if (mediatype == EASY_SDK_EVENT_FRAME_FLAG)
@@ -242,12 +269,12 @@ QTSS_Error	EasyRecordSession::HLSSessionStart(char* rtspUrl, UInt32 inTimeout)
 
 		}
 
-		if(NULL == fHLSHandle)
+		if(NULL == fRecordHandle)
 		{
 			//创建HLSSessioin Sink
-			fHLSHandle = EasyHLS_Session_Create(sPlaylistCapacity, sAllowCache, sM3U8Version);
+			fRecordHandle = EasyRecord_Session_Create(sAllowCache, sM3U8Version);
 
-			if (NULL == fHLSHandle)
+			if (NULL == fRecordHandle)
 			{
 				theErr = QTSS_Unimplemented;
 				break;
@@ -255,7 +282,7 @@ QTSS_Error	EasyRecordSession::HLSSessionStart(char* rtspUrl, UInt32 inTimeout)
 
 			char subDir[QTSS_MAX_URL_LENGTH] = { 0 };
 			qtss_sprintf(subDir,"%s/",fHLSSessionID.Ptr);
-			EasyHLS_ResetStreamCache(fHLSHandle, "./Movies/", subDir, fHLSSessionID.Ptr, sTargetDuration);
+			EasyRecord_ResetStreamCache(fRecordHandle, "./Movies/", subDir, fHLSSessionID.Ptr, sTargetDuration);
 
 			char msgStr[2048] = { 0 };
 			qtss_snprintf(msgStr, sizeof(msgStr), "EasyRecordSession::EasyHLS_ResetStreamCache SessionID=%s,movieFolder=%s,subDir=%s", fHLSSessionID.Ptr, "./Movies/", subDir);
@@ -288,10 +315,10 @@ QTSS_Error	EasyRecordSession::HLSSessionRelease()
 	}
 
 	//释放sink
-	if(fHLSHandle)
+	if(fRecordHandle)
 	{
-		EasyHLS_Session_Release(fHLSHandle);
-		fHLSHandle = NULL;
+		EasyRecord_Session_Release(fRecordHandle);
+		fRecordHandle = NULL;
 		fHLSURL[0] = '\0';
  	}
 
