@@ -629,7 +629,7 @@ QTSS_Error HTTPSession::ExecNetMsgEasyHLSModuleReq(char* queryString, char* json
 
 		if(bStop)
 		{
-			//Easy_StopHLSSession(sName);
+			Easy_StopHLSSession(sName);
 		}
 		else
 		{

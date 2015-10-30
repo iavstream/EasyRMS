@@ -282,7 +282,7 @@ QTSS_Error	EasyRecordSession::HLSSessionStart(char* rtspUrl, UInt32 inTimeout)
 
 			char subDir[QTSS_MAX_URL_LENGTH] = { 0 };
 			qtss_sprintf(subDir,"%s/",fHLSSessionID.Ptr);
-			EasyRecord_ResetStreamCache(fRecordHandle, "./Movies/", subDir, fHLSSessionID.Ptr, sTargetDuration);
+			EasyRecord_ResetStreamCache(fRecordHandle, "Movies/", subDir, fHLSSessionID.Ptr, sTargetDuration);
 
 			char msgStr[2048] = { 0 };
 			qtss_snprintf(msgStr, sizeof(msgStr), "EasyRecordSession::EasyHLS_ResetStreamCache SessionID=%s,movieFolder=%s,subDir=%s", fHLSSessionID.Ptr, "./Movies/", subDir);
