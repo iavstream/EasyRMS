@@ -33,6 +33,7 @@ static char*					sDefaultOSSEndpoint					= "oss-cn-hangzhou.aliyuncs.com";
 static UInt32					sDefaultOSSPort						= 80;
 static char*					sDefaultOSSAccessKeyID				= "ayO28eQpxOntWuzV";
 static char*					sDefaultOSSAccessKeySecret			= "MJQD5mE27JCTIwBdrbofmSPjgDoAkG";
+static UInt32					sDefaultRecordDuration				= 10;
 
 UInt32                          EasyRecordSession::sM3U8Version			= 3;
 Bool16                          EasyRecordSession::sAllowCache			= false;
@@ -44,7 +45,7 @@ char*							EasyRecordSession::sOSSEndpoint			= NULL;
 UInt32							EasyRecordSession::sOSSPort				= 80;
 char*							EasyRecordSession::sOSSAccessKeyID		= NULL;
 char*							EasyRecordSession::sOSSAccessKeySecret	= NULL;
-
+UInt32							EasyRecordSession::sRecordDuration		= 10;
 
 void EasyRecordSession::Initialize(QTSS_ModulePrefsObject inPrefs)
 {
@@ -62,6 +63,9 @@ void EasyRecordSession::Initialize(QTSS_ModulePrefsObject inPrefs)
 
 	QTSSModuleUtils::GetAttribute(inPrefs, "PLAYLIST_CAPACITY", qtssAttrDataTypeUInt32,
 							  &EasyRecordSession::sPlaylistCapacity, &sDefaultPlaylistCapacity, sizeof(sDefaultPlaylistCapacity));
+
+	QTSSModuleUtils::GetAttribute(inPrefs, "record_duration", qtssAttrDataTypeUInt32,
+							  &EasyRecordSession::sRecordDuration, &sDefaultRecordDuration, sizeof(sDefaultRecordDuration));
 	
 	delete [] sOSSBucketName;
 	sOSSBucketName = QTSSModuleUtils::GetStringAttribute(inPrefs, "oss_bucket_name", sDefaultOSSBucketName);
@@ -181,7 +185,9 @@ SInt64 EasyRecordSession::Run()
 QTSS_Error EasyRecordSession::ProcessData(int _chid, int mediatype, char *pbuf, RTSP_FRAME_INFO *frameinfo)
 {
 	if(NULL == fRecordHandle) return QTSS_Unimplemented;
-
+	
+	TryCreateNewRecord();
+	
 	if ((mediatype == EASY_SDK_VIDEO_FRAME_FLAG) || (mediatype == EASY_SDK_AUDIO_FRAME_FLAG))
 	{
 		fNumPacketsReceived++;
@@ -279,15 +285,17 @@ QTSS_Error	EasyRecordSession::HLSSessionStart(char* rtspUrl, UInt32 inTimeout)
 				theErr = QTSS_Unimplemented;
 				break;
 			}
+			fLastRecordTime = 0;
+			TryCreateNewRecord();
+			//char subDir[QTSS_MAX_URL_LENGTH] = { 0 };
+			//fLastRecordTime = time(NULL);
+			//qtss_sprintf(subDir,"%s/%s/",fHLSSessionID.Ptr, TimeToString(fLastRecordTime));//Movies/deviceid/YYYYMMDDhhmmss/
+			//EasyRecord_ResetStreamCache(fRecordHandle, "Movies/", subDir, fHLSSessionID.Ptr, sTargetDuration);
 
-			char subDir[QTSS_MAX_URL_LENGTH] = { 0 };
-			qtss_sprintf(subDir,"%s/",fHLSSessionID.Ptr);
-			EasyRecord_ResetStreamCache(fRecordHandle, "Movies/", subDir, fHLSSessionID.Ptr, sTargetDuration);
-
-			char msgStr[2048] = { 0 };
-			qtss_snprintf(msgStr, sizeof(msgStr), "EasyRecordSession::EasyHLS_ResetStreamCache SessionID=%s,movieFolder=%s,subDir=%s", fHLSSessionID.Ptr, "./Movies/", subDir);
-			QTSServerInterface::LogError(qtssMessageVerbosity, msgStr);
-					
+			//char msgStr[2048] = { 0 };
+			//qtss_snprintf(msgStr, sizeof(msgStr), "EasyRecordSession::EasyHLS_ResetStreamCache SessionID=%s,movieFolder=%s,subDir=%s", fHLSSessionID.Ptr, "Movies/", subDir);
+			//QTSServerInterface::LogError(qtssMessageVerbosity, msgStr);
+			//		
 			qtss_sprintf(fHLSURL, "%s%s/%s.m3u8", sHTTPRootDir, fHLSSessionID.Ptr, fHLSSessionID.Ptr);
 		}
 		
@@ -333,4 +341,46 @@ char* EasyRecordSession::GetHLSURL()
 char* EasyRecordSession::GetSourceURL()
 {
 	return 	fSourceURL;
+}
+
+const char*	EasyRecordSession::TimeToString(UInt64 inTime)
+{
+	static char s[20];
+	struct tm local;
+	time_t t = inTime;
+
+#ifdef _WIN32
+	localtime_s(&local, &t);
+#else
+	localtime_r(&t, &local);
+#endif
+
+	memset(s, 0, 20);
+	qtss_sprintf(s, "%04d%02d%02d%02d%02d%02d", local.tm_year + 1900, local.tm_mon + 1, local.tm_mday, \
+			local.tm_hour, local.tm_min, local.tm_sec);
+
+	return s;
+}
+
+bool EasyRecordSession::TryCreateNewRecord()
+{
+	if(fLastRecordTime != 0)
+	{
+		UInt64 now = time(NULL);		
+		if(now - fLastRecordTime < sRecordDuration * 60)
+		{
+			return false;
+		}
+	}
+
+	char subDir[QTSS_MAX_URL_LENGTH] = { 0 };
+	fLastRecordTime = time(NULL);
+	qtss_sprintf(subDir,"%s/%s/",fHLSSessionID.Ptr, TimeToString(fLastRecordTime));//Movies/deviceid/YYYYMMDDhhmmss/
+	EasyRecord_ResetStreamCache(fRecordHandle, "Movies/", subDir, fHLSSessionID.Ptr, sTargetDuration);
+
+	char msgStr[2048] = { 0 };
+	qtss_snprintf(msgStr, sizeof(msgStr), "EasyRecordSession::EasyHLS_ResetStreamCache SessionID=%s,movieFolder=%s,subDir=%s", fHLSSessionID.Ptr, "Movies/", subDir);
+	QTSServerInterface::LogError(qtssMessageVerbosity, msgStr);
+	
+	return true;
 }

@@ -69,7 +69,7 @@
 		<PREF NAME="M3U8_VERSION" TYPE="UInt32" >3</PREF>
 		<PREF NAME="ALLOW_CACHE" TYPE="Bool16" >false</PREF>
 		<PREF NAME="TARGET_DURATION" TYPE="UInt32" >30</PREF>
-		<PREF NAME="PLAYLIST_CAPACITY" TYPE="UInt32" >10</PREF>
+		<PREF NAME="PLAYLIST_CAPACITY" TYPE="UInt32" >10</PREF>				<PREF NAME="record_duration" TYPE="UInt32" >10</PREF><!--in minutes-->
 		<PREF NAME="oss_bucket_name" >easydarwin-easyrms-bucket</PREF>
 		<PREF NAME="oss_endpoint" >oss-cn-hangzhou.aliyuncs.com</PREF>
 		<PREF NAME="oss_port" TYPE="UInt32" >80</PREF>

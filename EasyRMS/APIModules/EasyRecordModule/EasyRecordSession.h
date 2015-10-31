@@ -55,6 +55,9 @@ class EasyRecordSession : public Task
 		SInt64			GetNumPacketsReceived() const { return fNumPacketsReceived; }
 		SInt64			GetNumBytesReceived()	const { return fNumBytesReceived; }
 		UInt32			GetLastStatBitrate()	const { return fLastStatBitrate; }
+
+		const char*		TimeToString(UInt64 inTime);//return string with formatYYYYMMDDhhmmss
+		bool			TryCreateNewRecord();
    
     private:
 
@@ -83,6 +86,7 @@ class EasyRecordSession : public Task
 		static UInt32	sOSSPort;
 		static char*	sOSSAccessKeyID;
 		static char*	sOSSAccessKeySecret;
+		static UInt32	sRecordDuration;
 
 		//统计
 		SInt64          fPlayTime;				//起始的时间
@@ -97,6 +101,8 @@ class EasyRecordSession : public Task
         SInt64			fLastNumBytesReceived;	//上一次统计收到的数据总量
 
 		UInt32			fLastStatBitrate;		//最后一次统计得到的比特率
+
+		UInt64			fLastRecordTime;		//上次启动新录像的时间
 
 	protected:
 		TimeoutTask		fTimeoutTask;
