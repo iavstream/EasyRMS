@@ -87,6 +87,8 @@ class EasyRecordSession : public Task
 		static char*	sOSSAccessKeyID;
 		static char*	sOSSAccessKeySecret;
 		static UInt32	sRecordDuration;
+		static char*	sLocalRecordPath;
+		static UInt32	sRecordToWhere;	//0-OSS 1-local
 
 		//统计
 		SInt64          fPlayTime;				//起始的时间

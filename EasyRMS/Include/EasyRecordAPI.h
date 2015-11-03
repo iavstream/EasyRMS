@@ -28,16 +28,24 @@ enum{
 	TS_TYPE_PES_VIDEO_E_FRAME = 0x03800000,
 };
 
+typedef enum _ENUM_RECORD_TYPE
+{
+	RECORD_TYPE_OSS,
+	RECORD_TYPE_FILE
+}ENUM_RECORD_TYPE;
 
 #ifdef __cplusplus
 extern "C"
 {
 #endif
+	
 	/* OSS 初始化 全局调用一次 */
 	EasyHLS_API int EasyRecord_OSS_Initialize(const char* bucket_name, const char* oss_endpoint, size_t oss_port, const char* access_key_id, const char* access_key_secret);
 	
 	/* OSS 资源回收 全局调用一次 */
 	EasyHLS_API void EasyRecord_OSS_Deinitialize();
+
+	EasyHLS_API void Easy_APICALL EasyRecord_SetRecordType(ENUM_RECORD_TYPE type);
 
 	/* 创建HLSSession  返回为句柄值 */
 	EasyHLS_API Easy_Record_Handle Easy_APICALL EasyRecord_Session_Create(/*int nCapacity,*/ bool bAllowCache, int version);

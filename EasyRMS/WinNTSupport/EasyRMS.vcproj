@@ -429,6 +429,10 @@
 				</File>
 			</Filter>
 		</Filter>
+		<File
+			RelativePath=".\easyrms.xml"
+			>
+		</File>
 	</Files>
 	<Globals>
 	</Globals>

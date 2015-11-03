@@ -34,6 +34,8 @@ static UInt32					sDefaultOSSPort						= 80;
 static char*					sDefaultOSSAccessKeyID				= "ayO28eQpxOntWuzV";
 static char*					sDefaultOSSAccessKeySecret			= "MJQD5mE27JCTIwBdrbofmSPjgDoAkG";
 static UInt32					sDefaultRecordDuration				= 10;
+static char*					sDefaultLocalRecordPath				= "Record";
+static UInt32					sDefaultRecordToWhere				= RECORD_TYPE_FILE;
 
 UInt32                          EasyRecordSession::sM3U8Version			= 3;
 Bool16                          EasyRecordSession::sAllowCache			= false;
@@ -46,6 +48,8 @@ UInt32							EasyRecordSession::sOSSPort				= 80;
 char*							EasyRecordSession::sOSSAccessKeyID		= NULL;
 char*							EasyRecordSession::sOSSAccessKeySecret	= NULL;
 UInt32							EasyRecordSession::sRecordDuration		= 10;
+char*							EasyRecordSession::sLocalRecordPath		= NULL;
+UInt32							EasyRecordSession::sRecordToWhere		= RECORD_TYPE_FILE;
 
 void EasyRecordSession::Initialize(QTSS_ModulePrefsObject inPrefs)
 {
@@ -67,6 +71,12 @@ void EasyRecordSession::Initialize(QTSS_ModulePrefsObject inPrefs)
 	QTSSModuleUtils::GetAttribute(inPrefs, "record_duration", qtssAttrDataTypeUInt32,
 							  &EasyRecordSession::sRecordDuration, &sDefaultRecordDuration, sizeof(sDefaultRecordDuration));
 	
+	delete [] sLocalRecordPath;
+	sLocalRecordPath = QTSSModuleUtils::GetStringAttribute(inPrefs, "local_record_path", sDefaultLocalRecordPath);
+
+	QTSSModuleUtils::GetAttribute(inPrefs, "reord_to_where", qtssAttrDataTypeUInt32,
+							  &EasyRecordSession::sRecordToWhere, &sDefaultRecordToWhere, sizeof(sDefaultRecordToWhere));
+	
 	delete [] sOSSBucketName;
 	sOSSBucketName = QTSSModuleUtils::GetStringAttribute(inPrefs, "oss_bucket_name", sDefaultOSSBucketName);
 
@@ -82,7 +92,11 @@ void EasyRecordSession::Initialize(QTSS_ModulePrefsObject inPrefs)
 	delete [] sOSSAccessKeySecret;
 	sOSSAccessKeySecret = QTSSModuleUtils::GetStringAttribute(inPrefs, "oss_access_key_secret", sDefaultOSSAccessKeySecret);
 
-	EasyRecord_OSS_Initialize(sOSSBucketName, sOSSEndpoint, sOSSPort, sOSSAccessKeyID, sOSSAccessKeySecret);
+	if(sRecordToWhere == RECORD_TYPE_OSS)
+	{
+		EasyRecord_OSS_Initialize(sOSSBucketName, sOSSEndpoint, sOSSPort, sOSSAccessKeyID, sOSSAccessKeySecret);
+	}
+	EasyRecord_SetRecordType((ENUM_RECORD_TYPE)sRecordToWhere);
 }
 
 /* RTSPClient获取数据后回调给上层 */
@@ -198,7 +212,7 @@ QTSS_Error EasyRecordSession::ProcessData(int _chid, int mediatype, char *pbuf, 
 	{
 		unsigned long long llPTS = (frameinfo->timestamp_sec%1000000)*1000 + frameinfo->timestamp_usec/1000;	
 
-		printf("Get %s Video \tLen:%d \ttm:%u.%u \t%u\n",frameinfo->type==EASY_SDK_VIDEO_FRAME_I?"I":"P", frameinfo->length, frameinfo->timestamp_sec, frameinfo->timestamp_usec, llPTS);
+		//printf("Get %s Video \tLen:%d \ttm:%u.%u \t%u\n",frameinfo->type==EASY_SDK_VIDEO_FRAME_I?"I":"P", frameinfo->length, frameinfo->timestamp_sec, frameinfo->timestamp_usec, llPTS);
 
 		unsigned int uiFrameType = 0;
 		if (frameinfo->type == EASY_SDK_VIDEO_FRAME_I)
@@ -221,7 +235,7 @@ QTSS_Error EasyRecordSession::ProcessData(int _chid, int mediatype, char *pbuf, 
 
 		unsigned long long llPTS = (frameinfo->timestamp_sec%1000000)*1000 + frameinfo->timestamp_usec/1000;	
 
-		printf("Get Audio \tLen:%d \ttm:%u.%u \t%u\n", frameinfo->length, frameinfo->timestamp_sec, frameinfo->timestamp_usec, llPTS);
+		//printf("Get Audio \tLen:%d \ttm:%u.%u \t%u\n", frameinfo->length, frameinfo->timestamp_sec, frameinfo->timestamp_usec, llPTS);
 
 		if (frameinfo->codec == EASY_SDK_AUDIO_CODEC_AAC)
 		{
@@ -372,14 +386,27 @@ bool EasyRecordSession::TryCreateNewRecord()
 			return false;
 		}
 	}
-
+	
+	char rootDir[QTSS_MAX_URL_LENGTH] = { 0 };
 	char subDir[QTSS_MAX_URL_LENGTH] = { 0 };
+	
+	if(sRecordToWhere == RECORD_TYPE_FILE)
+	{
+		qtss_sprintf(rootDir,"%s/%s/", sLocalRecordPath, fHLSSessionID.Ptr);
+	}
+	else
+	{
+		qtss_sprintf(rootDir,"%s/", fHLSSessionID.Ptr);
+	}
+	
 	fLastRecordTime = time(NULL);
-	qtss_sprintf(subDir,"%s/%s/",fHLSSessionID.Ptr, TimeToString(fLastRecordTime));//Movies/deviceid/YYYYMMDDhhmmss/
-	EasyRecord_ResetStreamCache(fRecordHandle, "Movies/", subDir, fHLSSessionID.Ptr, sTargetDuration);
+	qtss_sprintf(subDir,"%s/", TimeToString(fLastRecordTime));
+	
+	//EasyRecord_SetRecordType((ENUM_RECORD_TYPE)sRecordToWhere);
+	EasyRecord_ResetStreamCache(fRecordHandle, rootDir, subDir, fHLSSessionID.Ptr, sTargetDuration);//deviceid/YYYYMMDDhhmmss/
 
 	char msgStr[2048] = { 0 };
-	qtss_snprintf(msgStr, sizeof(msgStr), "EasyRecordSession::EasyHLS_ResetStreamCache SessionID=%s,movieFolder=%s,subDir=%s", fHLSSessionID.Ptr, "Movies/", subDir);
+	qtss_snprintf(msgStr, sizeof(msgStr), "EasyRecordSession::EasyHLS_ResetStreamCache SessionID=%s,movieFolder=%s,subDir=%s", fHLSSessionID.Ptr, rootDir, subDir);
 	QTSServerInterface::LogError(qtssMessageVerbosity, msgStr);
 	
 	return true;

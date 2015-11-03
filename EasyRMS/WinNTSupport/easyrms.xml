@@ -12,15 +12,15 @@
 		<PREF NAME="total_bytes_update" TYPE="UInt32" >1</PREF>
 		<PREF NAME="average_bandwidth_update" TYPE="UInt32" >60</PREF>
 		<PREF NAME="safe_play_duration" TYPE="UInt32" >600</PREF>
-		<PREF NAME="module_folder" >./EasyCMSModules/</PREF>
-		<PREF NAME="error_logfile_name" >EasyCMS_Error</PREF>
+		<PREF NAME="module_folder" >./EasyRMSModules/</PREF>
+		<PREF NAME="error_logfile_name" >EasyRMS_Error</PREF>
 		<PREF NAME="error_logfile_dir" >./Logs/</PREF>
 		<PREF NAME="error_logfile_interval" TYPE="UInt32" >7</PREF>
 		<PREF NAME="error_logfile_size" TYPE="UInt32" >256000</PREF>
 		<PREF NAME="error_logfile_verbosity" TYPE="UInt32" >2</PREF>
 		<PREF NAME="screen_logging" TYPE="Bool16" >true</PREF>
 		<PREF NAME="error_logging" TYPE="Bool16" >true</PREF>
-		<PREF NAME="service_id" >EasyCMS_Demo</PREF>
+		<PREF NAME="service_id" >EasyRMS_Demo</PREF>
 		<PREF NAME="start_thinning_delay" TYPE="SInt32" >0</PREF>
 		<PREF NAME="large_window_size" TYPE="UInt32" >64</PREF>
 		<PREF NAME="window_size_threshold" TYPE="UInt32" >200</PREF>
@@ -53,7 +53,7 @@
 		<PREF NAME="window_size_max_threshold" TYPE="UInt32" >1000</PREF>
 		<PREF NAME="CMS_server_info" TYPE="Bool16" >true</PREF>
 		<PREF NAME="run_num_threads" TYPE="UInt32" >0</PREF>
-		<PREF NAME="pid_file" >EasyCMS.pid</PREF>
+		<PREF NAME="pid_file" >EasyRMS.pid</PREF>
 		<PREF NAME="force_logs_close_on_write" TYPE="Bool16" >false</PREF>
 		<PREF NAME="disable_thinning" TYPE="Bool16" >false</PREF>
 		<PREF NAME="monitor_lan_port" TYPE="UInt16" >8080</PREF>
@@ -69,7 +69,10 @@
 		<PREF NAME="M3U8_VERSION" TYPE="UInt32" >3</PREF>
 		<PREF NAME="ALLOW_CACHE" TYPE="Bool16" >false</PREF>
 		<PREF NAME="TARGET_DURATION" TYPE="UInt32" >30</PREF>
-		<PREF NAME="PLAYLIST_CAPACITY" TYPE="UInt32" >10</PREF>				<PREF NAME="record_duration" TYPE="UInt32" >10</PREF><!--in minutes-->
+		<PREF NAME="PLAYLIST_CAPACITY" TYPE="UInt32" >10</PREF>
+		<PREF NAME="record_duration" TYPE="UInt32" >2</PREF>
+		<PREF NAME="local_record_path" >Record</PREF>
+		<PREF NAME="reord_to_where" TYPE="UInt32" >0</PREF>
 		<PREF NAME="oss_bucket_name" >easydarwin-easyrms-bucket</PREF>
 		<PREF NAME="oss_endpoint" >oss-cn-hangzhou.aliyuncs.com</PREF>
 		<PREF NAME="oss_port" TYPE="UInt32" >80</PREF>
