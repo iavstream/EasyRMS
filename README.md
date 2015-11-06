@@ -9,9 +9,9 @@ Windows版本编译，可以直接用Visual Studio 2008打开源码文件中的�
 ## 配置 ##
 EasyRMS主要的几个配置项：
 
-	monitor_lan_port：		EasyRMS服务端口
+	monitor_lan_port：		EasyRMS内网服务端口
 	
-	monitor_wan_port：		EasyRMS服务端口
+	monitor_wan_port：		EasyRMS公网服务端口
 	
 	record_duration: 		单个m3u8的录像时长，单位为分钟	
 	
@@ -21,13 +21,13 @@ EasyRMS主要的几个配置项：
 	
 	oss_endpoint： 			阿里云OSS服务地址（reord_to_where配置为OSS存储时有效）
 	
-	oss_port：				阿里云OSS服务端口，默认为80（reord_to_where配置为OSS存储时有效）
+	oss_port：			阿里云OSS服务端口，默认为80（reord_to_where配置为OSS存储时有效）
 	
 	oss_bucket_name：		阿里云OSS Bucket名称（reord_to_where配置为OSS存储时有效）
 	
 	oss_access_key_id：		阿里云提供的OSS登陆id（reord_to_where配置为OSS存储时有效）
 	
-	oss_access_key_secret：	阿里云提供的OSS登陆密钥（reord_to_where配置为OSS存储时有效）
+	oss_access_key_secret：		阿里云提供的OSS登陆密钥（reord_to_where配置为OSS存储时有效）
 	
 ## 运行 ##
 Windows版本运行(控制台调试运行)：
